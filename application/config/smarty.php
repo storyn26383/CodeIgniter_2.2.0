@@ -14,7 +14,7 @@
  */
 
 // Smarty caching enabled by default unless explicitly set to FALSE
-$config['smarty.cache_status'] = TRUE;
+$config['smarty.cache_status'] = FALSE;
 
 // The path to the themes
 // Default is implied root directory/themes/

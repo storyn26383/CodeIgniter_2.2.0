@@ -2,7 +2,6 @@
 
 class News extends MX_Controller {
 	public function index() {
-		$this->load->helper('language');
 		$this->lang->load('news');
 
 		$assign_data = array(
