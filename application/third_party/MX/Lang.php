@@ -62,10 +62,16 @@ class MX_Lang extends CI_Lang
 	}
 
 	public function load($langfile = array(), $idiom = '', $return = FALSE, $add_suffix = TRUE, $alt_path = '', $_module = '') {
+		if (is_array($langfile)) {
+			foreach ($langfile as $_lang) $this->load($_lang);
+			return $this->language;
+		}
+
 		$this->_set_language();
 		$CI =& get_instance();
 
 		$langfile = str_replace('.php', '', $langfile);
+
 		// add prefix on language key
 		$this->_language_prefix = $langfile;
 
