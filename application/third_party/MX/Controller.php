@@ -191,10 +191,10 @@ class MX_Controller
 	protected $_supported_formats = array(
 		'xml'			=> 'application/xml',
 		'json'			=> 'application/json',
-		'jsonp'			=> 'application/javascript',
+		// 'jsonp'			=> 'application/javascript',
 		'serialized'	=> 'application/vnd.php.serialized',
 		'php'			=> 'text/plain',
-		'html'			=> 'text/html',
+		// 'html'			=> 'text/html',
 		'csv'			=> 'application/csv'
 	);
 
@@ -363,7 +363,6 @@ class MX_Controller
 		if (config_item('rest_enable_logging')) {
 			$this->_log_access_time();
 		}
-
 	}
 
 	/**
@@ -417,7 +416,8 @@ class MX_Controller
 
 		// Sure it exists, but can they do anything with it?
 		if ( ! method_exists($this, $controller_method)) {
-			$this->response(array(config_item('rest_status_field_name') => false, config_item('rest_message_field_name') => 'Unknown method.'), 404);
+			// $this->response(array(config_item('rest_status_field_name') => false, config_item('rest_message_field_name') => 'Unknown method.'), 404);
+			show_404();
 		}
 
 		// Doing key related stuff? Can only do it if they have a key right?
@@ -464,6 +464,12 @@ class MX_Controller
 	protected function _fire_method($method, $args)
 	{
 		call_user_func_array($method, $args);
+
+		if (count($args) && $args[0] == 'format') {
+			$this->response($this->response->data);
+		} else {
+			$this->parser->parse($this->response->tpl, $this->response->data);
+		}
 	}
 
 	/**
@@ -534,7 +540,7 @@ class MX_Controller
 		// the reduction, causing the browser to hang waiting for more data.
 		// We'll just skip content-length in those cases.
 		if ( ! $this->_zlib_oc && ! $this->config->item('compress_output')) {
-			header('Content-Length: ' . strlen($output));
+			header('Content-Length: ' . @strlen($output));
 		}
 
 		if($continue){

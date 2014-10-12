@@ -6,16 +6,16 @@ class News extends MX_Controller {
 		$this->lang->load('news');
 	}
 
+	// public function index_get() {
+	// 	$assign_data = array(
+	// 		'title'		=> lang('news.title'),
+	// 		'body'		=> lang('news.body'),
+	// 	);
+
+	// 	$this->parser->parse('hello_world.tpl', $assign_data);
+	// }
+
 	public function index_get() {
-		$assign_data = array(
-			'title'		=> lang('news.title'),
-			'body'		=> lang('news.body'),
-		);
-
-		$this->parser->parse("hello_world.tpl", $assign_data);
-	}
-
-	public function show_get() {
 		$this->load->helper('url');
 
 		$data = array(1 => array(
@@ -23,28 +23,27 @@ class News extends MX_Controller {
 			'title' => 'Ebola screening starts at New York\'s JFK airport',
 			'author' => 'Sebastien Malo',
 			'date' => 'October 11, 2014',
-			'url' => site_url(uri_string() . '/id/1'),
+			'url' => site_url(uri_string() . '/1'),
 		), 2 => array(
 			'id' => 2,
 			'title' => 'Seven NJ high school football players charged in connection with hazing',
 			'author' => 'Associated Press',
 			'date' => 'October 11, 2014',
-			'url' => site_url(uri_string() . '/id/2'),
+			'url' => site_url(uri_string() . '/2'),
 		), 3 => array(
 			'id' => 3,
 			'title' => 'Georgia could sue dealer for making Todd Gurley break rules',
 			'author' => 'Keith Whitney',
 			'date' => 'Sat Oct 11, 2014 2:06pm',
-			'url' => site_url(uri_string() . '/id/3'),
+			'url' => site_url(uri_string() . '/3'),
 		));
 
 		$id = $this->get('id');
 
-		$assign_data = array(
+		$this->response->tpl = 'news.tpl';
+		$this->response->data = array(
 			's_show'	=> !!$id,
 			'data'		=> !$id ? $data : @$data[$id],
 		);
-
-		$this->parser->parse("news.tpl", $assign_data);
 	}
 }
