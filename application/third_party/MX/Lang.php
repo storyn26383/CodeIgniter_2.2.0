@@ -70,18 +70,18 @@ class MX_Lang extends CI_Lang
 		$this->_set_language();
 		$CI =& get_instance();
 
-		$langfile = str_replace('.php', '', $langfile);
+		$_langfile = str_replace('.php', '', $langfile);
 
 		// add prefix on language key
-		$this->_language_prefix = $langfile;
+		$this->_language_prefix = $_langfile;
 
 		if ($add_suffix == TRUE) {
-			$langfile = str_replace('_lang.', '', $langfile) . '_lang';
+			$_langfile = str_replace('_lang.', '', $_langfile) . '_lang';
 		}
 
-		$langfile .= '.php';
+		$_langfile .= '.php';
 
-		if (in_array($langfile, $this->is_loaded, TRUE)) {
+		if (in_array($_langfile, $this->is_loaded, TRUE)) {
 			return;
 		}
 
@@ -92,41 +92,47 @@ class MX_Lang extends CI_Lang
 			$idiom = ($deft_lang == '') ? 'english' : $deft_lang;
 		}
 
+		// Default load English language file
+		if ($idiom != 'english') {
+			$this->load($langfile, 'english');
+		}
+
 		$_module OR $_module = CI::$APP->router->fetch_module();
-		list($path, $langfile) = Modules::find($langfile, $_module, 'language/' . $idiom . '/');
+		list($path, $_langfile) = Modules::find($_langfile, $_module, 'language/' . $idiom . '/');
 
 		// Determine where the language file is and load it
 		if ($path === FALSE) {
-			if ($alt_path != '' && file_exists($alt_path . 'language/' . $idiom . '/' . $langfile)) {
-				include($alt_path . 'language/' . $idiom . '/' . $langfile);
+			if ($alt_path != '' && file_exists($alt_path . 'language/' . $idiom . '/' . $_langfile)) {
+				include($alt_path . 'language/' . $idiom . '/' . $_langfile);
 			} else {
 				$found = FALSE;
 
 				foreach (get_instance()->load->get_package_paths(TRUE) as $package_path) {
-					if (file_exists($package_path . 'language/' . $idiom . '/' . $langfile)) {
-						include($package_path . 'language/' . $idiom . '/' . $langfile);
+					if (file_exists($package_path . 'language/' . $idiom . '/' . $_langfile)) {
+						include($package_path . 'language/' . $idiom . '/' . $_langfile);
 						$found = TRUE;
 						break;
 					}
 				}
 
 				if ($found !== TRUE) {
-					show_error('Unable to load the requested language file: language/' . $idiom . '/' . $langfile);
+					// show_error('Unable to load the requested language file: language/' . $idiom . '/' . $_langfile);
+					log_message('Unable to load the requested language file: language/' . $idiom . '/' . $_langfile);
 				}
 			}
 		} else {
-			$lang = Modules::load_file($langfile, $path, 'lang');
+			$lang = Modules::load_file($_langfile, $path, 'lang');
 		}
 
 		if (!isset($lang)) {
-			log_message('error', 'Language file contains no data: language/' . $idiom . '/' . $langfile);
+			log_message('error', 'Language file contains no data: language/' . $idiom . '/' . $_langfile);
 
 			return;
 		}
 
 		if ($return) return $lang;
 
-		$this->is_loaded[] = $langfile;
+		$this->is_loaded[] = $_langfile;
 
 		// add prefix value of array key
 		$lang = $this->_set_prefix($lang);
@@ -134,7 +140,7 @@ class MX_Lang extends CI_Lang
 
 		unset($lang);
 
-		log_message('debug', 'Language file loaded: language/' . $idiom . '/' . $langfile);
+		log_message('debug', 'Language file loaded: language/' . $idiom . '/' . $_langfile);
 
 		return $this->language;
 	}

@@ -3,7 +3,6 @@
 class News extends MX_Controller {
 	public function __construct() {
 		parent::__construct();
-		$this->lang->load('news');
 	}
 
 	// public function index_get() {
@@ -40,9 +39,10 @@ class News extends MX_Controller {
 
 		$id = $this->get('id');
 
-		$this->response->tpl = 'news.tpl';
-		$this->response->data = array(
+		$this->response->config = array(
 			's_show'	=> !!$id,
+		);
+		$this->response->data = array(
 			'data'		=> !$id ? $data : @$data[$id],
 		);
 	}

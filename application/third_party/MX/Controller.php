@@ -103,7 +103,7 @@ class MX_Controller
 	 * The insert_id of the log entry (if we have one)
 	 *
 	 * @var string
-	*/
+	 */
 	protected $_insert_id = '';
 
 	/**
@@ -173,14 +173,14 @@ class MX_Controller
 	 * The start of the response time from the server
 	 *
 	 * @var string
-	*/
+	 */
 	protected $_start_rtime = '';
 
 	/**
 	 * The end of the response time from the server
 	 *
 	 * @var string
-	*/
+	 */
 	protected $_end_rtime = '';
 
 	/**
@@ -468,8 +468,18 @@ class MX_Controller
 		if (count($args) && $args[0] == 'format') {
 			$this->response($this->response->data);
 		} else {
-			$this->parser->parse($this->response->tpl, $this->response->data);
+			@$this->response->tpl or $this->response->tpl = $this->router->fetch_class() . '.tpl';
+			$this->parser->parse($this->response->tpl, array_merge(
+				$this->_get_lang_array(),
+				$this->response->config,
+				$this->response->data
+			));
 		}
+	}
+
+	protected function _get_lang_array()
+	{
+		return array('lang' => $this->lang->load($this->router->fetch_class()));
 	}
 
 	/**
@@ -553,7 +563,7 @@ class MX_Controller
 		}
 	}
 
-	/*
+	/**
 	 * Detect SSL use
 	 *
 	 * Detect whether SSL is being used or not
@@ -564,7 +574,7 @@ class MX_Controller
 	}
 
 
-	/*
+	/**
 	 * Detect input format
 	 *
 	 * Detect which format the HTTP Body is provided in
@@ -999,7 +1009,6 @@ class MX_Controller
 		else {
 			parse_str(file_get_contents('php://input'), $this->_put_args);
 		}
-
 	}
 
 	/**
@@ -1533,7 +1542,6 @@ class MX_Controller
 	 * @author Chris Kacerguis
 	 * @return boolean
 	 */
-
 	protected function _log_access_time()
 	{
 		$payload['rtime'] = $this->_end_rtime - $this->_start_rtime;
