@@ -378,23 +378,25 @@ class Auth extends MX_Controller {
 	}
 
 	//deactivate the user
-	function deactivate($id = NULL)
+	function deactivate_get()
 	{
-		$id = (int) $id;
+		$id = (int) $this->get('id');
 
-		$this->load->library('form_validation');
+		// insert csrf check
+		$this->data['csrf'] = $this->_get_csrf_nonce();
+		$this->data['user'] = $this->ion_auth->user($id)->row();
+
+		$this->_render_page('auth/deactivate_user', $this->data);
+	}
+
+	function deactivate_post()
+	{
+		$id = (int) $this->get('id');
+
 		$this->form_validation->set_rules('confirm', $this->lang->line('deactivate_validation_confirm_label'), 'required');
 		$this->form_validation->set_rules('id', $this->lang->line('deactivate_validation_user_id_label'), 'required|alpha_numeric');
 
-		if ($this->form_validation->run() == FALSE)
-		{
-			// insert csrf check
-			$this->data['csrf'] = $this->_get_csrf_nonce();
-			$this->data['user'] = $this->ion_auth->user($id)->row();
-
-			$this->_render_page('auth/deactivate_user', $this->data);
-		}
-		else
+		if ($this->form_validation->run() == TRUE)
 		{
 			// do we really want to deactivate?
 			if ($this->input->post('confirm') == 'yes')
@@ -414,6 +416,8 @@ class Auth extends MX_Controller {
 
 			//redirect them back to the auth page
 			redirect('auth', 'refresh');
+		} else {
+			$this->deactivate_get();
 		}
 	}
 
@@ -684,10 +688,37 @@ class Auth extends MX_Controller {
 	}
 
 	// create a new group
-	function create_group()
+	function create_group_get()
 	{
 		$this->data['title'] = $this->lang->line('create_group_title');
 
+		if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin())
+		{
+			redirect('auth', 'refresh');
+		}
+
+		//display the create group form
+		//set the flash data error message if there is one
+		$this->data['message'] = (validation_errors() ? validation_errors() : ($this->ion_auth->errors() ? $this->ion_auth->errors() : $this->session->flashdata('message')));
+
+		$this->data['group_name'] = array(
+			'name'  => 'group_name',
+			'id'    => 'group_name',
+			'type'  => 'text',
+			'value' => $this->form_validation->set_value('group_name'),
+		);
+		$this->data['description'] = array(
+			'name'  => 'description',
+			'id'    => 'description',
+			'type'  => 'text',
+			'value' => $this->form_validation->set_value('description'),
+		);
+
+		$this->_render_page('auth/create_group', $this->data);
+	}
+
+	function create_group_post()
+	{
 		if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin())
 		{
 			redirect('auth', 'refresh');
@@ -710,66 +741,24 @@ class Auth extends MX_Controller {
 		}
 		else
 		{
-			//display the create group form
-			//set the flash data error message if there is one
-			$this->data['message'] = (validation_errors() ? validation_errors() : ($this->ion_auth->errors() ? $this->ion_auth->errors() : $this->session->flashdata('message')));
-
-			$this->data['group_name'] = array(
-				'name'  => 'group_name',
-				'id'    => 'group_name',
-				'type'  => 'text',
-				'value' => $this->form_validation->set_value('group_name'),
-			);
-			$this->data['description'] = array(
-				'name'  => 'description',
-				'id'    => 'description',
-				'type'  => 'text',
-				'value' => $this->form_validation->set_value('description'),
-			);
-
-			$this->_render_page('auth/create_group', $this->data);
+			$this->create_group_get();
 		}
 	}
 
 	//edit a group
-	function edit_group($id)
+	function edit_group_get()
 	{
-		// bail if no group id given
-		if(!$id || empty($id))
-		{
-			redirect('auth', 'refresh');
-		}
+		$id = $this->get('id');
 
 		$this->data['title'] = $this->lang->line('edit_group_title');
 
-		if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin())
+		// bail if no group id given
+		if (!$id || empty($id) || !$this->ion_auth->logged_in() || !$this->ion_auth->is_admin())
 		{
 			redirect('auth', 'refresh');
 		}
 
 		$group = $this->ion_auth->group($id)->row();
-
-		//validate form input
-		$this->form_validation->set_rules('group_name', $this->lang->line('edit_group_validation_name_label'), 'required|alpha_dash|xss_clean');
-		$this->form_validation->set_rules('group_description', $this->lang->line('edit_group_validation_desc_label'), 'xss_clean');
-
-		if (isset($_POST) && !empty($_POST))
-		{
-			if ($this->form_validation->run() === TRUE)
-			{
-				$group_update = $this->ion_auth->update_group($id, $_POST['group_name'], $_POST['group_description']);
-
-				if($group_update)
-				{
-					$this->session->set_flashdata('message', $this->lang->line('edit_group_saved'));
-				}
-				else
-				{
-					$this->session->set_flashdata('message', $this->ion_auth->errors());
-				}
-				redirect("auth", 'refresh');
-			}
-		}
 
 		//set the flash data error message if there is one
 		$this->data['message'] = (validation_errors() ? validation_errors() : ($this->ion_auth->errors() ? $this->ion_auth->errors() : $this->session->flashdata('message')));
@@ -793,6 +782,38 @@ class Auth extends MX_Controller {
 		$this->_render_page('auth/edit_group', $this->data);
 	}
 
+	function edit_group_post()
+	{
+		$id = $this->get('id');
+
+		// bail if no group id given
+		if (!$id || empty($id) || !$this->ion_auth->logged_in() || !$this->ion_auth->is_admin())
+		{
+			redirect('auth', 'refresh');
+		}
+
+		//validate form input
+		$this->form_validation->set_rules('group_name', $this->lang->line('edit_group_validation_name_label'), 'required|alpha_dash|xss_clean');
+		$this->form_validation->set_rules('group_description', $this->lang->line('edit_group_validation_desc_label'), 'xss_clean');
+
+		if (isset($_POST) && !empty($_POST))
+		{
+			if ($this->form_validation->run() === TRUE)
+			{
+				$group_update = $this->ion_auth->update_group($id, $_POST['group_name'], $_POST['group_description']);
+
+				if($group_update)
+				{
+					$this->session->set_flashdata('message', $this->lang->line('edit_group_saved'));
+				}
+				else
+				{
+					$this->session->set_flashdata('message', $this->ion_auth->errors());
+				}
+				redirect('auth', 'refresh');
+			}
+		}
+	}
 
 	function _get_csrf_nonce()
 	{
