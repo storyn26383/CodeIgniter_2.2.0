@@ -40,8 +40,12 @@
 
 $route['404_override'] = '';
 $route['default_controller'] = 'welcome';
-$route['^(.+)/(\d)$'] = '$1/index/id/$2';
-$route['^(.+)/format/(.*)'] = '$1/index/format/$2';
+
+$route['^([^/]+)/(\d)$'] = '$1/index/id/$2';
+$route['^([^/]+)/format/(.*)'] = '$1/index/format/$2';
+
+$route['^(.+)/(\d)$'] = '$1/id/$2';
+$route['^(.+)/format/(.*)'] = '$1/format/$2';
 
 
 /* End of file routes.php */

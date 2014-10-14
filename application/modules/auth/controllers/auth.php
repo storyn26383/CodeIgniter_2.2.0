@@ -106,7 +106,7 @@ class Auth extends MX_Controller {
 	}
 
 	//log the user out
-	function logout()
+	function logout_get()
 	{
 		$this->data['title'] = "Logout";
 
@@ -418,10 +418,67 @@ class Auth extends MX_Controller {
 	}
 
 	//create a new user
-	function create_user()
+	function create_user_get()
 	{
 		$this->data['title'] = "Create User";
 
+		if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin())
+		{
+			redirect('auth', 'refresh');
+		}
+
+		//display the create user form
+		//set the flash data error message if there is one
+		$this->data['message'] = (validation_errors() ? validation_errors() : ($this->ion_auth->errors() ? $this->ion_auth->errors() : $this->session->flashdata('message')));
+
+		$this->data['first_name'] = array(
+			'name'  => 'first_name',
+			'id'    => 'first_name',
+			'type'  => 'text',
+			'value' => $this->form_validation->set_value('first_name'),
+		);
+		$this->data['last_name'] = array(
+			'name'  => 'last_name',
+			'id'    => 'last_name',
+			'type'  => 'text',
+			'value' => $this->form_validation->set_value('last_name'),
+		);
+		$this->data['email'] = array(
+			'name'  => 'email',
+			'id'    => 'email',
+			'type'  => 'text',
+			'value' => $this->form_validation->set_value('email'),
+		);
+		$this->data['company'] = array(
+			'name'  => 'company',
+			'id'    => 'company',
+			'type'  => 'text',
+			'value' => $this->form_validation->set_value('company'),
+		);
+		$this->data['phone'] = array(
+			'name'  => 'phone',
+			'id'    => 'phone',
+			'type'  => 'text',
+			'value' => $this->form_validation->set_value('phone'),
+		);
+		$this->data['password'] = array(
+			'name'  => 'password',
+			'id'    => 'password',
+			'type'  => 'password',
+			'value' => $this->form_validation->set_value('password'),
+		);
+		$this->data['password_confirm'] = array(
+			'name'  => 'password_confirm',
+			'id'    => 'password_confirm',
+			'type'  => 'password',
+			'value' => $this->form_validation->set_value('password_confirm'),
+		);
+
+		$this->_render_page('auth/create_user', $this->data);
+	}
+
+	function create_user_post()
+	{
 		if (!$this->ion_auth->logged_in() || !$this->ion_auth->is_admin())
 		{
 			redirect('auth', 'refresh');
@@ -460,54 +517,7 @@ class Auth extends MX_Controller {
 		}
 		else
 		{
-			//display the create user form
-			//set the flash data error message if there is one
-			$this->data['message'] = (validation_errors() ? validation_errors() : ($this->ion_auth->errors() ? $this->ion_auth->errors() : $this->session->flashdata('message')));
-
-			$this->data['first_name'] = array(
-				'name'  => 'first_name',
-				'id'    => 'first_name',
-				'type'  => 'text',
-				'value' => $this->form_validation->set_value('first_name'),
-			);
-			$this->data['last_name'] = array(
-				'name'  => 'last_name',
-				'id'    => 'last_name',
-				'type'  => 'text',
-				'value' => $this->form_validation->set_value('last_name'),
-			);
-			$this->data['email'] = array(
-				'name'  => 'email',
-				'id'    => 'email',
-				'type'  => 'text',
-				'value' => $this->form_validation->set_value('email'),
-			);
-			$this->data['company'] = array(
-				'name'  => 'company',
-				'id'    => 'company',
-				'type'  => 'text',
-				'value' => $this->form_validation->set_value('company'),
-			);
-			$this->data['phone'] = array(
-				'name'  => 'phone',
-				'id'    => 'phone',
-				'type'  => 'text',
-				'value' => $this->form_validation->set_value('phone'),
-			);
-			$this->data['password'] = array(
-				'name'  => 'password',
-				'id'    => 'password',
-				'type'  => 'password',
-				'value' => $this->form_validation->set_value('password'),
-			);
-			$this->data['password_confirm'] = array(
-				'name'  => 'password_confirm',
-				'id'    => 'password_confirm',
-				'type'  => 'password',
-				'value' => $this->form_validation->set_value('password_confirm'),
-			);
-
-			$this->_render_page('auth/create_user', $this->data);
+			$this->create_user_get();
 		}
 	}
 
