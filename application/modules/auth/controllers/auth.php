@@ -1,6 +1,6 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Auth extends CI_Controller {
+class Auth extends MX_Controller {
 
 	function __construct()
 	{
@@ -16,10 +16,12 @@ class Auth extends CI_Controller {
 
 		$this->lang->load('auth');
 		$this->load->helper('language');
+
+		$this->data = array();
 	}
 
 	//redirect if needed, otherwise display the user list
-	function index()
+	function index_get()
 	{
 
 		if (!$this->ion_auth->logged_in())
@@ -44,12 +46,33 @@ class Auth extends CI_Controller {
 				$this->data['users'][$k]->groups = $this->ion_auth->get_users_groups($user->id)->result();
 			}
 
-			$this->_render_page('auth/index', $this->data);
+			$this->_render_page('index', $this->data);
 		}
 	}
 
 	//log the user in
-	function login()
+	function login_get()
+	{
+		$this->data['title'] = "Login";
+
+		//the user is not logging in so display the login page
+		//set the flash data error message if there is one
+		$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
+
+		$this->data['identity'] = array('name' => 'identity',
+			'id' => 'identity',
+			'type' => 'text',
+			'value' => $this->form_validation->set_value('identity'),
+		);
+		$this->data['password'] = array('name' => 'password',
+			'id' => 'password',
+			'type' => 'password',
+		);
+
+		$this->_render_page('auth/login', $this->data);
+	}
+
+	function login_post()
 	{
 		$this->data['title'] = "Login";
 
@@ -80,21 +103,7 @@ class Auth extends CI_Controller {
 		}
 		else
 		{
-			//the user is not logging in so display the login page
-			//set the flash data error message if there is one
-			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
-
-			$this->data['identity'] = array('name' => 'identity',
-				'id' => 'identity',
-				'type' => 'text',
-				'value' => $this->form_validation->set_value('identity'),
-			);
-			$this->data['password'] = array('name' => 'password',
-				'id' => 'password',
-				'type' => 'password',
-			);
-
-			$this->_render_page('auth/login', $this->data);
+			$this->login_get();
 		}
 	}
 
@@ -344,7 +353,6 @@ class Auth extends CI_Controller {
 		}
 	}
 
-
 	//activate the user
 	function activate($id, $code=false)
 	{
@@ -506,8 +514,10 @@ class Auth extends CI_Controller {
 	}
 
 	//edit a user
-	function edit_user($id)
+	function edit_user_get()
 	{
+		$id = $this->get('id');
+
 		$this->data['title'] = "Edit User";
 
 		if (!$this->ion_auth->logged_in() || (!$this->ion_auth->is_admin() && !($this->ion_auth->user()->row()->id == $id)))
@@ -794,7 +804,6 @@ class Auth extends CI_Controller {
 
 	function _render_page($view, $data=null, $render=false)
 	{
-
 		$this->viewdata = (empty($data)) ? $this->data: $data;
 
 		$view_html = $this->load->view($view, $this->viewdata, $render);

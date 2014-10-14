@@ -467,8 +467,12 @@ class MX_Controller
 
 		if (count($args) && $args[0] == 'format') {
 			$this->response($this->response->data);
-		} else {
+		} elseif (@!$this->_use_ci_view) {
+			// set default value
 			@$this->response->tpl or $this->response->tpl = $this->router->fetch_class() . '.tpl';
+			@$this->response->config or $this->response->config = array();
+			@$this->response->data or $this->response->data = array();
+
 			$this->parser->parse($this->response->tpl, array_merge(
 				$this->_get_lang_array(),
 				$this->response->config,
