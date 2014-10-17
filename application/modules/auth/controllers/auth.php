@@ -119,7 +119,44 @@ class Auth extends MX_Controller {
 	}
 
 	//change password
-	function change_password()
+	function change_password_get()
+	{
+		$user = $this->ion_auth->user()->row();
+
+		//display the form
+		//set the flash data error message if there is one
+		$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
+
+		$this->data['min_password_length'] = $this->config->item('min_password_length', 'ion_auth');
+		$this->data['old_password'] = array(
+			'name'	=> 'old',
+			'id'	=> 'old',
+			'type'	=> 'password',
+		);
+		$this->data['new_password'] = array(
+			'name'		=> 'new',
+			'id'		=> 'new',
+			'type'		=> 'password',
+			'pattern'	=> '^.{'.$this->data['min_password_length'].'}.*$',
+		);
+		$this->data['new_password_confirm'] = array(
+			'name'		=> 'new_confirm',
+			'id'		=> 'new_confirm',
+			'type'		=> 'password',
+			'pattern'	=> '^.{'.$this->data['min_password_length'].'}.*$',
+		);
+		$this->data['user_id'] = array(
+			'name'	=> 'user_id',
+			'id'	=> 'user_id',
+			'type'	=> 'hidden',
+			'value'	=> $user->id,
+		);
+
+		//render
+		$this->_render_page('auth/change_password', $this->data);
+	}
+
+	function change_password_post()
 	{
 		$this->form_validation->set_rules('old', $this->lang->line('change_password_validation_old_password_label'), 'required');
 		$this->form_validation->set_rules('new', $this->lang->line('change_password_validation_new_password_label'), 'required|min_length[' . $this->config->item('min_password_length', 'ion_auth') . ']|max_length[' . $this->config->item('max_password_length', 'ion_auth') . ']|matches[new_confirm]');
@@ -130,41 +167,9 @@ class Auth extends MX_Controller {
 			redirect('auth/login', 'refresh');
 		}
 
-		$user = $this->ion_auth->user()->row();
-
 		if ($this->form_validation->run() == false)
 		{
-			//display the form
-			//set the flash data error message if there is one
-			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
-
-			$this->data['min_password_length'] = $this->config->item('min_password_length', 'ion_auth');
-			$this->data['old_password'] = array(
-				'name' => 'old',
-				'id'   => 'old',
-				'type' => 'password',
-			);
-			$this->data['new_password'] = array(
-				'name' => 'new',
-				'id'   => 'new',
-				'type' => 'password',
-				'pattern' => '^.{'.$this->data['min_password_length'].'}.*$',
-			);
-			$this->data['new_password_confirm'] = array(
-				'name' => 'new_confirm',
-				'id'   => 'new_confirm',
-				'type' => 'password',
-				'pattern' => '^.{'.$this->data['min_password_length'].'}.*$',
-			);
-			$this->data['user_id'] = array(
-				'name'  => 'user_id',
-				'id'    => 'user_id',
-				'type'  => 'hidden',
-				'value' => $user->id,
-			);
-
-			//render
-			$this->_render_page('auth/change_password', $this->data);
+			$this->change_password_get();
 		}
 		else
 		{
@@ -187,62 +192,68 @@ class Auth extends MX_Controller {
 	}
 
 	//forgot password
-	function forgot_password()
+	function forgot_password_get()
 	{
-		//setting validation rules by checking wheather identity is username or email
-		if($this->config->item('identity', 'ion_auth') == 'username' )
-		{
-		   $this->form_validation->set_rules('email', $this->lang->line('forgot_password_username_identity_label'), 'required');
+		//setup the input
+		$this->data['email'] = array('name' => 'email',
+			'id' => 'email',
+		);
+
+		if ( $this->config->item('identity', 'ion_auth') == 'username' ){
+			$this->data['identity_label'] = $this->lang->line('forgot_password_username_identity_label');
 		}
 		else
 		{
-		   $this->form_validation->set_rules('email', $this->lang->line('forgot_password_validation_email_label'), 'required|valid_email');
+			$this->data['identity_label'] = $this->lang->line('forgot_password_email_identity_label');
 		}
 
+		//set any errors and display the form
+		$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
+		$this->_render_page('auth/forgot_password', $this->data);
+	}
+
+	function forgot_password_post()
+	{
+		//setting validation rules by checking wheather identity is username or email
+		if ($this->config->item('identity', 'ion_auth') == 'username')
+		{
+			$this->form_validation->set_rules('email', $this->lang->line('forgot_password_username_identity_label'), 'required');
+		}
+		else
+		{
+			$this->form_validation->set_rules('email', $this->lang->line('forgot_password_validation_email_label'), 'required|valid_email');
+		}
 
 		if ($this->form_validation->run() == false)
 		{
-			//setup the input
-			$this->data['email'] = array('name' => 'email',
-				'id' => 'email',
-			);
-
-			if ( $this->config->item('identity', 'ion_auth') == 'username' ){
-				$this->data['identity_label'] = $this->lang->line('forgot_password_username_identity_label');
-			}
-			else
-			{
-				$this->data['identity_label'] = $this->lang->line('forgot_password_email_identity_label');
-			}
-
-			//set any errors and display the form
-			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
-			$this->_render_page('auth/forgot_password', $this->data);
+			$this->forgot_password_get();
 		}
 		else
 		{
 			// get identity from username or email
-			if ( $this->config->item('identity', 'ion_auth') == 'username' ){
+			if ($this->config->item('identity', 'ion_auth') == 'username')
+			{
 				$identity = $this->ion_auth->where('username', strtolower($this->input->post('email')))->users()->row();
 			}
 			else
 			{
 				$identity = $this->ion_auth->where('email', strtolower($this->input->post('email')))->users()->row();
 			}
-	            	if(empty($identity)) {
 
-	            		if($this->config->item('identity', 'ion_auth') == 'username')
-		            	{
-                                   $this->ion_auth->set_message('forgot_password_username_not_found');
-		            	}
-		            	else
-		            	{
-		            	   $this->ion_auth->set_message('forgot_password_email_not_found');
-		            	}
+			if(empty($identity))
+			{
+				if($this->config->item('identity', 'ion_auth') == 'username')
+				{
+					$this->ion_auth->set_message('forgot_password_username_not_found');
+				}
+				else
+				{
+					$this->ion_auth->set_message('forgot_password_email_not_found');
+				}
 
-		                $this->session->set_flashdata('message', $this->ion_auth->messages());
-                		redirect("auth/forgot_password", 'refresh');
-            		}
+				$this->session->set_flashdata('message', $this->ion_auth->messages());
+				redirect("auth/forgot_password", 'refresh');
+			}
 
 			//run the forgotten password method to email an activation code to the user
 			$forgotten = $this->ion_auth->forgotten_password($identity->{$this->config->item('identity', 'ion_auth')});
@@ -262,7 +273,7 @@ class Auth extends MX_Controller {
 	}
 
 	//reset password - final step for forgotten password
-	public function reset_password($code = NULL)
+	function reset_password_get($code = NULL)
 	{
 		if (!$code)
 		{
@@ -300,7 +311,7 @@ class Auth extends MX_Controller {
 				);
 				$this->data['user_id'] = array(
 					'name'  => 'user_id',
-					'id'    => 'user_id',
+					'id'	=> 'user_id',
 					'type'  => 'hidden',
 					'value' => $user->id,
 				);
@@ -333,7 +344,7 @@ class Auth extends MX_Controller {
 					{
 						//if the password was successfully changed
 						$this->session->set_flashdata('message', $this->ion_auth->messages());
-						$this->logout();
+						$this->logout_get();
 					}
 					else
 					{
@@ -351,9 +362,19 @@ class Auth extends MX_Controller {
 		}
 	}
 
-	//activate the user
-	function activate($id, $code=false)
+	function reset_password_post($code = NULL)
 	{
+		$this->reset_password_get($code);
+	}
+
+	//activate the user
+	function activate_get()
+	{
+		$id = $this->get('id');
+
+		// there are some problem
+		$code = false;
+
 		if ($code !== false)
 		{
 			$activation = $this->ion_auth->activate($id, $code);
@@ -437,43 +458,43 @@ class Auth extends MX_Controller {
 
 		$this->data['first_name'] = array(
 			'name'  => 'first_name',
-			'id'    => 'first_name',
+			'id'	=> 'first_name',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('first_name'),
 		);
 		$this->data['last_name'] = array(
 			'name'  => 'last_name',
-			'id'    => 'last_name',
+			'id'	=> 'last_name',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('last_name'),
 		);
 		$this->data['email'] = array(
 			'name'  => 'email',
-			'id'    => 'email',
+			'id'	=> 'email',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('email'),
 		);
 		$this->data['company'] = array(
 			'name'  => 'company',
-			'id'    => 'company',
+			'id'	=> 'company',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('company'),
 		);
 		$this->data['phone'] = array(
 			'name'  => 'phone',
-			'id'    => 'phone',
+			'id'	=> 'phone',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('phone'),
 		);
 		$this->data['password'] = array(
 			'name'  => 'password',
-			'id'    => 'password',
+			'id'	=> 'password',
 			'type'  => 'password',
 			'value' => $this->form_validation->set_value('password'),
 		);
 		$this->data['password_confirm'] = array(
 			'name'  => 'password_confirm',
-			'id'    => 'password_confirm',
+			'id'	=> 'password_confirm',
 			'type'  => 'password',
 			'value' => $this->form_validation->set_value('password_confirm'),
 		);
@@ -502,14 +523,14 @@ class Auth extends MX_Controller {
 		if ($this->form_validation->run() == true)
 		{
 			$username = strtolower($this->input->post('first_name')) . ' ' . strtolower($this->input->post('last_name'));
-			$email    = strtolower($this->input->post('email'));
+			$email	= strtolower($this->input->post('email'));
 			$password = $this->input->post('password');
 
 			$additional_data = array(
 				'first_name' => $this->input->post('first_name'),
 				'last_name'  => $this->input->post('last_name'),
-				'company'    => $this->input->post('company'),
-				'phone'      => $this->input->post('phone'),
+				'company'	=> $this->input->post('company'),
+				'phone'	  => $this->input->post('phone'),
 			);
 		}
 		if ($this->form_validation->run() == true && $this->ion_auth->register($username, $password, $email, $additional_data))
@@ -554,25 +575,25 @@ class Auth extends MX_Controller {
 
 		$this->data['first_name'] = array(
 			'name'  => 'first_name',
-			'id'    => 'first_name',
+			'id'	=> 'first_name',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('first_name', $user->first_name),
 		);
 		$this->data['last_name'] = array(
 			'name'  => 'last_name',
-			'id'    => 'last_name',
+			'id'	=> 'last_name',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('last_name', $user->last_name),
 		);
 		$this->data['company'] = array(
 			'name'  => 'company',
-			'id'    => 'company',
+			'id'	=> 'company',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('company', $user->company),
 		);
 		$this->data['phone'] = array(
 			'name'  => 'phone',
-			'id'    => 'phone',
+			'id'	=> 'phone',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('phone', $user->phone),
 		);
@@ -628,8 +649,8 @@ class Auth extends MX_Controller {
 				$data = array(
 					'first_name' => $this->input->post('first_name'),
 					'last_name'  => $this->input->post('last_name'),
-					'company'    => $this->input->post('company'),
-					'phone'      => $this->input->post('phone'),
+					'company'	=> $this->input->post('company'),
+					'phone'	  => $this->input->post('phone'),
 				);
 
 				//update the password if it was posted
@@ -656,10 +677,10 @@ class Auth extends MX_Controller {
 
 				//check to see if we are updating the user
 			   if($this->ion_auth->update($user->id, $data))
-			    {
-			    	//redirect them back to the admin page if admin, or to the base url if non admin
-				    $this->session->set_flashdata('message', $this->ion_auth->messages() );
-				    if ($this->ion_auth->is_admin())
+				{
+					//redirect them back to the admin page if admin, or to the base url if non admin
+					$this->session->set_flashdata('message', $this->ion_auth->messages() );
+					if ($this->ion_auth->is_admin())
 					{
 						redirect('auth', 'refresh');
 					}
@@ -667,12 +688,12 @@ class Auth extends MX_Controller {
 					{
 						redirect('/', 'refresh');
 					}
-			    }
-			    else
-			    {
-			    	//redirect them back to the admin page if admin, or to the base url if non admin
-				    $this->session->set_flashdata('message', $this->ion_auth->errors());
-				    if ($this->ion_auth->is_admin())
+				}
+				else
+				{
+					//redirect them back to the admin page if admin, or to the base url if non admin
+					$this->session->set_flashdata('message', $this->ion_auth->errors());
+					if ($this->ion_auth->is_admin())
 					{
 						redirect('auth', 'refresh');
 					}
@@ -680,7 +701,7 @@ class Auth extends MX_Controller {
 					{
 						redirect('/', 'refresh');
 					}
-			    }
+				}
 			}
 		}
 
@@ -703,13 +724,13 @@ class Auth extends MX_Controller {
 
 		$this->data['group_name'] = array(
 			'name'  => 'group_name',
-			'id'    => 'group_name',
+			'id'	=> 'group_name',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('group_name'),
 		);
 		$this->data['description'] = array(
 			'name'  => 'description',
-			'id'    => 'description',
+			'id'	=> 'description',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('description'),
 		);
@@ -768,13 +789,13 @@ class Auth extends MX_Controller {
 
 		$this->data['group_name'] = array(
 			'name'  => 'group_name',
-			'id'    => 'group_name',
+			'id'	=> 'group_name',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('group_name', $group->name),
 		);
 		$this->data['group_description'] = array(
 			'name'  => 'group_description',
-			'id'    => 'group_description',
+			'id'	=> 'group_description',
 			'type'  => 'text',
 			'value' => $this->form_validation->set_value('group_description', $group->description),
 		);
